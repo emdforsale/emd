@@ -137,11 +137,13 @@ int processFile(std::string file, size_t algType)
 	if(algType == 1)
 	{
 		std::cout << "light spline" << std::endl;
+		//calculate Empirical Mode Decomposition using light weight algorithm
 		procres = rParabEmd__LFlyEmb(&cvec[0], &tBuf[0], cvec.size(), 15, 15, &fce, callback);
 	}
 	else
 	{
 		std::cout << "classic spline" << std::endl;
+		//calculate Empirical Mode Decomposition using classic algorithm
 		procres = rParabEmd__LEmb(&cvec[0], cvec.size(), 15, 15, &ce, &res[0], callback);
 	}
 		clock_t end = clock();
