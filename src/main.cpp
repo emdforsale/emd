@@ -30,7 +30,6 @@ namespace fs =std::experimental::filesystem::v1;
 
 std::vector<std::vector<float>> values;
 std::vector<float> vec;
-std::vector<SOURCE_TYPE> tBuf;
 bool callback(SOURCE_TYPE* data, size_t size, size_t imf)
 {
 	std::cout << "Imf=" << imf << std::endl;
@@ -121,15 +120,9 @@ int processFile(std::string file, size_t algType, std::vector<float>& result)
 				break;
 		}
 		size_t quntN = vec.size();
+		//source signal
 		std::vector<SOURCE_TYPE> cvec( &vec[0], &vec[quntN] );
-		std::vector<double> res;
-		ContextE ce;
-		alloc(&ce, FILE_MAX_SIZE);//you can init pointers by static buffers if you need, or write your own allocator for it
-		clearFlyC(&ce.minfc);
-		clearFlyC(&ce.maxfc);
-		FlyContextE fce;
-		tBuf.resize(vec.size());
-		res.resize(vec.size());
+	
 		if ( vec.size() == quntN )
 			vec.push_back( *vec.rbegin() );
 		clock_t begin = clock();
@@ -137,19 +130,37 @@ int processFile(std::string file, size_t algType, std::vector<float>& result)
 	int procres = 0;
 	if(algType == 1)
 	{
+		FlyContextE fce;
+
+		//temporary buffer
+		std::vector<SOURCE_TYPE> tBuf;
+		tBuf.resize(vec.size());
+
 		std::cout << "light spline" << std::endl;
+
 		procres = rParabEmd__LFlyEmb(&cvec[0], &tBuf[0], cvec.size(), 15, 15, &fce, callback);
 	}
 	else
 	{
+		ContextE ce;
+		alloc(&ce, FILE_MAX_SIZE);//you can init pointers by static buffers if you need, or write your own allocator for it
+		clearFlyC(&ce.minfc);
+		clearFlyC(&ce.maxfc);
+
+		//temporary buffer
+		std::vector<double> tBuf;
+		tBuf.resize(vec.size());
+
 		std::cout << "classic spline" << std::endl;
-		procres = rParabEmd__LEmb(&cvec[0], cvec.size(), 15, 15, &ce, &res[0], callback);
-	}
-		result = cvec;
-		clock_t end = clock();
-		double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
-		std::cout << " Res=" << procres <<  " Time spent=" << time_spent << std::endl;
+
+		procres = rParabEmd__LEmb(&cvec[0], cvec.size(), 15, 15, &ce, &tBuf[0], callback);
+
 		release(&ce);
+	}
+	result = cvec;
+	clock_t end = clock();
+	double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+	std::cout << " Res=" << procres <<  " Time spent=" << time_spent << std::endl;
 	return 0;
 }
 std::vector<float> result;
