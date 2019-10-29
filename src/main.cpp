@@ -190,15 +190,18 @@ void main_loop()
 	   }
 	   ImGui::EndCombo();
 	}
-	static int algType = 0;
-        ImGui::RadioButton("classic spline", &algType, 0); ImGui::SameLine();
-        ImGui::RadioButton("lightweight spline", &algType, 1); 
 
-	ImVec2 btnsize(100, 20);
-	if (ImGui::Button("Calculate", btnsize))
+	ImVec2 btnsize(200, 30);
+	if (ImGui::Button("Classic spline", btnsize))
 	{
 		result.clear();
-		processFile(current_item, algType, result);
+		processFile(current_item, 0, result);
+	}
+	ImGui::SameLine();
+	if (ImGui::Button("light weight spline", btnsize))
+	{
+		result.clear();
+		processFile(current_item, 1, result);
 	}
 	       
 	size_t lineH = (HEIGHT-300)/((values.size()>0)?values.size():1);
