@@ -53,25 +53,25 @@ std::vector<std::string>& getListOfFiles()
 {
 	return listOfFiles;
 }
-int getMin(const std::vector<float>& v)
+int getXBottom(const std::vector<float>& v)
 {
 	int res = std::numeric_limits<int>::max();
-	for(auto it = v.cbegin(); it != v.cend(); ++it)
+	for(auto it : v)
 	{
-		if(*it < res)
-			res = *it;
+		if(it < res)
+			res = it;
 	}
-	return res;
+	return res-1;
 }
-int getMax(const std::vector<float>& v)
+int getXTop(const std::vector<float>& v)
 {
 	int res = std::numeric_limits<int>::min();
-	for(auto it = v.cbegin(); it != v.cend(); ++it)
+	for(auto it : v)
 	{
-		if(*it > res)
-			res = *it;
+		if(it > res)
+			res = it;
 	}
-	return res;
+	return res+1;
 }
 void init()
 {
@@ -94,7 +94,7 @@ void init()
         context_ = SDL_GL_CreateContext(window_);
         ImGui_ImplSdl_Init(window_);
 }
-int processFile(std::string file, size_t algType)
+int processFile(std::string file, size_t algType, std::vector<float>& result)
 {
 		std::string filePath = DIR_PATH;
 	        filePath += "/" + file + ".txt";
@@ -129,6 +129,7 @@ int processFile(std::string file, size_t algType)
 		clearFlyC(&ce.maxfc);
 		FlyContextE fce;
 		tBuf.resize(vec.size());
+		res.resize(vec.size());
 		if ( vec.size() == quntN )
 			vec.push_back( *vec.rbegin() );
 		clock_t begin = clock();
@@ -137,21 +138,21 @@ int processFile(std::string file, size_t algType)
 	if(algType == 1)
 	{
 		std::cout << "light spline" << std::endl;
-		//calculate Empirical Mode Decomposition using light weight algorithm
 		procres = rParabEmd__LFlyEmb(&cvec[0], &tBuf[0], cvec.size(), 15, 15, &fce, callback);
 	}
 	else
 	{
 		std::cout << "classic spline" << std::endl;
-		//calculate Empirical Mode Decomposition using classic algorithm
 		procres = rParabEmd__LEmb(&cvec[0], cvec.size(), 15, 15, &ce, &res[0], callback);
 	}
+		result = cvec;
 		clock_t end = clock();
 		double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
 		std::cout << " Res=" << procres <<  " Time spent=" << time_spent << std::endl;
 		release(&ce);
 	return 0;
 }
+std::vector<float> result;
 void main_loop()
 {
         SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
@@ -196,13 +197,14 @@ void main_loop()
 	ImVec2 btnsize(100, 20);
 	if (ImGui::Button("Calculate", btnsize))
 	{
-		processFile(current_item, algType);
+		result.clear();
+		processFile(current_item, algType, result);
 	}
 	       
 	size_t lineH = (HEIGHT-300)/((values.size()>0)?values.size():1);
 	if(lineH >80)
 		lineH = 80;
-	ImGui::PlotLines("Source", &vec[0], vec.size(), 0, NULL, getMin(vec), getMax(vec), ImVec2(0, lineH));
+	ImGui::PlotLines("Source", &vec[0], vec.size(), 0, NULL, getXBottom(vec), getXTop(vec), ImVec2(0, lineH));
 	for(int i =0; i< values.size();i ++)
 	{
 		std::stringstream hdr;
@@ -210,10 +212,9 @@ void main_loop()
 		hdr << i+1;
 		hdr << ")";
 		std::string hdrStr = hdr.str().c_str();
-		if( i == values.size()-1)
-			hdrStr += "(Result)";
-		ImGui::PlotLines(hdrStr.c_str(), &values[i][0], values[i].size(), 0, NULL, getMin(values[i]), getMax(values[i]), ImVec2(0, lineH));
+		ImGui::PlotLines(hdrStr.c_str(), &values[i][0], values[i].size(), 0, NULL, getXBottom(values[i]), getXTop(values[i]), ImVec2(0, lineH));
 	}
+	ImGui::PlotLines("(Result)", &result[0], result.size(), 0, NULL, getXBottom(result), getXTop(result), ImVec2(0, lineH));
 
 	ImGui::End();
 	ImGui::PopStyleColor(4);
